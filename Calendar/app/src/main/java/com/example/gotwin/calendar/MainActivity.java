@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.provider.CalendarContract;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CalendarView;
@@ -17,8 +18,24 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
+import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -28,27 +45,76 @@ public class MainActivity extends Activity {
     private static String eventTitle;
     private static String eventDescription;
     private static GregorianCalendar eventDate = new GregorianCalendar();
+    private static int count = 0;
 
-    private TextView textView1;
-    private TextView textView2;
+    private CallbackManager callbackManager;
+    private GraphRequest myFriendsRequest;
 
+    private long currDate;
+
+    private ArrayList<String> friendsNames;
+    private ArrayList<Long> friendsBirthdayDates;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        FacebookSdk.sdkInitialize(getApplicationContext());
         setContentView(R.layout.activity_main);
 
-        textView1 = (TextView) findViewById(R.id.textDate);
-        textView2 = (TextView) findViewById(R.id.textView);
+        callbackManager = CallbackManager.Factory.create();
+
+        final LoginButton loginButton = (LoginButton) findViewById(R.id.loginButton);
+        loginButton.setReadPermissions(Arrays.asList("user_friends"));
+
+        loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+
+                Toast.makeText(getApplicationContext(),
+                        "Login success",
+                        Toast.LENGTH_SHORT).show();
+
+                myFriendsRequest = GraphRequest.
+                        newMyFriendsRequest(AccessToken.getCurrentAccessToken(),
+                                new GraphRequest.GraphJSONArrayCallback() {
+                                    @Override
+                                    public void onCompleted(JSONArray objects,
+                                                            GraphResponse response) {
+
+                                        getFriendsBirthdays(objects);
+                                        callFacebookDialog();
+
+                                    }
+                                });
+                Bundle bundle = new Bundle();
+                bundle.putString("fields", "name,birthday");
+                myFriendsRequest.setParameters(bundle);
+                myFriendsRequest.executeAsync();
+
+            }
+
+            @Override
+            public void onCancel() {
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+            }
+        });
 
         initializeCalendar();
+    }
 
-
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        callbackManager.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
     public void initializeCalendar() {
 
-        CalendarView calendarView = (CalendarView) findViewById(R.id.calendarView);
+        final CalendarView calendarView = (CalendarView) findViewById(R.id.calendarView);
+
+        currDate = calendarView.getDate();
 
         calendarView.setFirstDayOfWeek(Calendar.MONDAY);
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
@@ -56,7 +122,12 @@ public class MainActivity extends Activity {
             public void onSelectedDayChange(CalendarView view,
                                             int year, int month, int dayOfMonth) {
 
-                eventDate.set(year, month, dayOfMonth);
+                if (calendarView.getDate() != currDate) {
+
+                    currDate = calendarView.getDate();
+                    eventDate.set(year, month, dayOfMonth);
+
+                }
 
                 callNotDialog();
             }
@@ -67,8 +138,6 @@ public class MainActivity extends Activity {
 
         LinearLayout view = (LinearLayout)
                 getLayoutInflater().inflate(R.layout.dialog_activity, null);
-
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MM/yyyy, k:m");
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
 
@@ -90,14 +159,12 @@ public class MainActivity extends Activity {
 
                 eventDescription = etDescription.getText().toString();
                 eventTitle = etTitle.getText().toString();
-                textView2.setText(eventTitle + "\n" + eventDescription);
 
                 eventDate.set(Calendar.HOUR, timePicker.getCurrentHour());
                 eventDate.set(Calendar.MINUTE, timePicker.getCurrentMinute());
 
-                textView1.setText(simpleDateFormat.format(eventDate.getTime()));
 
-                if (cbIsInternalNotifi.isChecked()){
+                if (cbIsInternalNotifi.isChecked()) {
                     createEvent();
                 } else {
                     insertEvent();
@@ -117,6 +184,55 @@ public class MainActivity extends Activity {
         alertDialog.show();
     }
 
+    private void callFacebookDialog() {
+
+        final LinearLayout fBDView = (LinearLayout)
+                getLayoutInflater().inflate(R.layout.facebook_dialog, null);
+
+        final CheckBox fBCBox = (CheckBox) fBDView.findViewById(R.id.facebookCB);
+        final TextView FBFriendName = (TextView) fBDView.findViewById(R.id.FBFriendName);
+
+        if (count < friendsBirthdayDates.size()) {
+
+            eventTitle = "BIRTHDAY";
+            eventDescription = "Birthday of " + friendsNames.get(count);
+            eventDate.setTimeInMillis(friendsBirthdayDates.get(count));
+
+            FBFriendName.setText(eventDescription);
+
+            count++;
+
+            final AlertDialog.Builder facebookDialog = new AlertDialog.Builder(this);
+
+            facebookDialog.setTitle("Create FB Friend's Birthdays Notifications");
+            facebookDialog.setView(fBDView);
+            facebookDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    createEvent();
+
+                    if (fBCBox.isChecked()) {
+                        insertEvent();
+                    }
+
+                    callFacebookDialog();
+
+                    dialog.cancel();
+                }
+            });
+            facebookDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    dialog.cancel();
+                }
+            });
+
+            facebookDialog.create().show();
+        }
+    }
+
     public void createEvent() {
 
         Intent intent = new Intent(this, MyReceiver.class);
@@ -131,7 +247,8 @@ public class MainActivity extends Activity {
                 getSystemService(Context.ALARM_SERVICE);
 
         alarmManager.set(AlarmManager.RTC,
-                eventDate.getTimeInMillis() - 5 * 60 * 1000, pendingIntent);
+                eventDate.getTimeInMillis(),
+                pendingIntent);
     }
 
     public void insertEvent() {
@@ -142,14 +259,52 @@ public class MainActivity extends Activity {
         intent.putExtra(CalendarContract.Events.TITLE, eventTitle);
         intent.putExtra(CalendarContract.Events.DESCRIPTION, eventDescription);
         intent.putExtra(CalendarContract.Events.DTSTART,
-                eventDate.getTimeInMillis() - 5 * 60 * 1000);
+                eventDate.getTimeInMillis());
         intent.putExtra(CalendarContract.Events.DTEND,
-                eventDate.getTimeInMillis() + 5 * 60 * 1000);
+                eventDate.getTimeInMillis());
         intent.putExtra(CalendarContract.Events.ALL_DAY, "false");
         intent.putExtra(CalendarContract.Events.EVENT_LOCATION, "EVENT LOCATION");
 
         startActivity(intent);
 
+    }
+
+    private void getFriendsBirthdays(JSONArray objects) {
+
+        friendsNames = new ArrayList<>();
+        friendsBirthdayDates = new ArrayList<>();
+
+        String date;
+        String name;
+
+        GregorianCalendar calendar = new GregorianCalendar();
+
+        for (int i = 0; i < objects.length(); i++) {
+
+            try {
+
+                date = objects.getJSONObject(i).getString("birthday");
+                name = objects.getJSONObject(i).getString("name");
+
+                calendar.set(Calendar.DAY_OF_MONTH,
+                        Integer.parseInt(date.split("/")[0]));
+
+                calendar.set(Calendar.MONTH,
+                        Integer.parseInt(date.split("/")[1]));
+
+                if (System.currentTimeMillis() > calendar.getTimeInMillis()) {
+                    calendar.set(Calendar.YEAR, +1);
+                }
+
+                friendsBirthdayDates.add(calendar.getTimeInMillis());
+                friendsNames.add(name);
+
+            } catch (JSONException e) {
+
+                e.printStackTrace();
+
+            }
+        }
     }
 
 
@@ -173,5 +328,12 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    protected void onDestroy() {
+        super.onDestroy();
+
+        LoginManager.getInstance().logOut();
+
     }
 }
