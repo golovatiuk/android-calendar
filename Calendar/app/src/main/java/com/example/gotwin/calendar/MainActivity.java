@@ -126,10 +126,9 @@ public class MainActivity extends Activity {
 
                     currDate = calendarView.getDate();
                     eventDate.set(year, month, dayOfMonth);
+                    callNotDialog();
 
                 }
-
-                callNotDialog();
             }
         });
     }
