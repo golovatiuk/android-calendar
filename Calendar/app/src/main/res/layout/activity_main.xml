@@ -12,10 +12,16 @@
 
         <view
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="fill_parent"
             class="com.facebook.login.widget.LoginButton"
-            android:id="@+id/loginButton"
-            android:layout_margin="6dp" />
+            android:id="@+id/loginButton" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:text="Get events"
+            android:id="@+id/getEventsBttn"
+            android:onClick="onClick" />
 
     </LinearLayout>
 

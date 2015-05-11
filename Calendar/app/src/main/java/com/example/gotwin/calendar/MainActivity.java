@@ -4,14 +4,16 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.CalendarContract;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
 import android.widget.CalendarView;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -35,12 +37,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Objects;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnClickListener {
 
     private static String eventTitle;
     private static String eventDescription;
@@ -55,6 +59,11 @@ public class MainActivity extends Activity {
     private ArrayList<String> friendsNames;
     private ArrayList<Long> friendsBirthdayDates;
 
+    public static ArrayList<String> events;
+    public static ArrayList<Long> dates;
+    public static ArrayList<String> contacts;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +73,7 @@ public class MainActivity extends Activity {
         callbackManager = CallbackManager.Factory.create();
 
         final LoginButton loginButton = (LoginButton) findViewById(R.id.loginButton);
-        loginButton.setReadPermissions(Arrays.asList("user_friends"));
+        loginButton.setReadPermissions(Collections.singletonList("user_friends"));
 
         loginButton.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
@@ -81,16 +90,19 @@ public class MainActivity extends Activity {
                                     public void onCompleted(JSONArray objects,
                                                             GraphResponse response) {
 
+                                        Log.d("---  request success", "" + objects.toString());
+
                                         getFriendsBirthdays(objects);
                                         callFacebookDialog();
 
                                     }
                                 });
                 Bundle bundle = new Bundle();
-                bundle.putString("fields", "name,birthday");
+                bundle.putString("fields", "name, birthday");
                 myFriendsRequest.setParameters(bundle);
                 myFriendsRequest.executeAsync();
 
+                Log.d("----  login sucsess", "" + friendsNames);
             }
 
             @Override
@@ -306,27 +318,69 @@ public class MainActivity extends Activity {
         }
     }
 
+    public void readEvents() {
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+        long calId = 0;
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        events = new ArrayList<>();
+        dates = new ArrayList<>();
+        contacts = new ArrayList<>();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        final String[] EVENT_PROJECTION = new String[] {
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events._ID,
+                CalendarContract.Events.TITLE,
+                CalendarContract.Events.DESCRIPTION,
+                CalendarContract.Events.DTSTART };
+
+        final String[] CALENDARS_PROJECTION = new String[] {
+                CalendarContract.Calendars._ID,
+                CalendarContract.Calendars.OWNER_ACCOUNT };
+
+        ContentResolver contentResolver = getContentResolver();
+        Uri eventsUri = CalendarContract.Events.CONTENT_URI;
+        Uri calendarsUri = CalendarContract.Calendars.CONTENT_URI;
+
+        Cursor calendarsCursor = contentResolver.query(calendarsUri,
+                CALENDARS_PROJECTION, null, null, null);
+
+        Cursor eventsCursor = contentResolver.query(eventsUri,
+                EVENT_PROJECTION, null, null, null);
+
+
+        while (calendarsCursor.moveToNext()) {
+
+            Log.d("#### calendar cursor", "" + calendarsCursor.getString(1) + calendarsCursor.getLong(0));
+
+            if (calendarsCursor.getString(1).equals("#contacts@group.v.calendar.google.com")) {
+
+                calId = calendarsCursor.getLong(0);
+            }
         }
 
-        return super.onOptionsItemSelected(item);
+        while (eventsCursor.moveToNext()) {
+
+            if (eventsCursor.getLong(0) == calId) {
+
+                contacts.add(eventsCursor.getString(2));
+                events.add(eventsCursor.getString(1) + eventsCursor.getString(2));
+                dates.add(eventsCursor.getLong(4));
+            }
+        }
+
+        Log.d("#### dates", "" + dates);
+        Log.d("#### contacts", "" + contacts);
+
+        eventsCursor.close();
+        calendarsCursor.close();
+
+    }
+
+    public void onClick(View v) {
+
+        readEvents();
+
+        startActivity(new Intent(this, ListOfEvents.class));
     }
 
     protected void onDestroy() {
