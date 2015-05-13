@@ -37,18 +37,18 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Objects;
+import java.util.HashMap;
 
 
 public class MainActivity extends Activity implements View.OnClickListener {
 
-    private static String eventTitle;
-    private static String eventDescription;
-    private static GregorianCalendar eventDate = new GregorianCalendar();
+    public static String eventTitle;
+    public static String eventDescription;
+    public static Calendar eventDate = new GregorianCalendar();
     private static int count = 0;
 
     private CallbackManager callbackManager;
@@ -59,6 +59,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private ArrayList<String> friendsNames;
     private ArrayList<Long> friendsBirthdayDates;
 
+    public static HashMap<Long, ArrayList<Object>> eventsInfo;
     public static ArrayList<String> events;
     public static ArrayList<Long> dates;
     public static ArrayList<String> contacts;
@@ -120,6 +121,30 @@ public class MainActivity extends Activity implements View.OnClickListener {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         callbackManager.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == RESULT_OK) {
+            if (requestCode == 1) {
+                switch (data.getStringExtra("result")) {
+                    case "Event created":
+
+                        createEvent();
+
+                        Toast.makeText(getApplicationContext(), "Event created:\n " +
+                                eventTitle + "\n" + eventDescription, Toast.LENGTH_LONG).show();
+
+                        break;
+
+                    case "Event removed":
+
+                        removeEvent();
+
+                        Toast.makeText(getApplicationContext(), "Event removed:\n " +
+                                eventTitle + "\n" + eventDescription, Toast.LENGTH_LONG).show();
+
+                        break;
+                }
+            }
+        }
     }
 
     public void initializeCalendar() {
@@ -139,7 +164,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
                     currDate = calendarView.getDate();
                     eventDate.set(year, month, dayOfMonth);
                     callNotDialog();
-
                 }
             }
         });
@@ -244,15 +268,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         }
     }
 
-    public void createEvent() {
+    protected void createEvent() {
 
-        Intent intent = new Intent(this, MyReceiver.class);
-        intent.putExtra("Title", eventTitle);
-        intent.putExtra("Message", eventDescription);
-        intent.putExtra("Date", eventDate.getTimeInMillis());
-
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0,
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = createEventPIntent(getApplicationContext(),
+                eventTitle,
+                eventDescription,
+                eventDate);
 
         AlarmManager alarmManager = (AlarmManager)
                 getSystemService(Context.ALARM_SERVICE);
@@ -260,6 +281,19 @@ public class MainActivity extends Activity implements View.OnClickListener {
         alarmManager.set(AlarmManager.RTC,
                 eventDate.getTimeInMillis(),
                 pendingIntent);
+    }
+
+    public void removeEvent() {
+
+        PendingIntent pendingIntent = createEventPIntent(getApplicationContext(),
+                eventTitle,
+                eventDescription,
+                eventDate);
+
+        AlarmManager alarmManager = (AlarmManager)
+                getSystemService(Context.ALARM_SERVICE);
+
+        alarmManager.cancel(pendingIntent);
     }
 
     public void insertEvent() {
@@ -325,6 +359,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         events = new ArrayList<>();
         dates = new ArrayList<>();
         contacts = new ArrayList<>();
+        eventsInfo = new HashMap<>();
 
         final String[] EVENT_PROJECTION = new String[] {
                 CalendarContract.Events.CALENDAR_ID,
@@ -333,7 +368,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
                 CalendarContract.Events.DESCRIPTION,
                 CalendarContract.Events.DTSTART };
 
-        final String[] CALENDARS_PROJECTION = new String[] {
+        final String[] CALENDAR_PROJECTION = new String[] {
                 CalendarContract.Calendars._ID,
                 CalendarContract.Calendars.OWNER_ACCOUNT };
 
@@ -342,15 +377,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Uri calendarsUri = CalendarContract.Calendars.CONTENT_URI;
 
         Cursor calendarsCursor = contentResolver.query(calendarsUri,
-                CALENDARS_PROJECTION, null, null, null);
+                CALENDAR_PROJECTION, null, null, null);
 
         Cursor eventsCursor = contentResolver.query(eventsUri,
                 EVENT_PROJECTION, null, null, null);
 
 
         while (calendarsCursor.moveToNext()) {
-
-            Log.d("#### calendar cursor", "" + calendarsCursor.getString(1) + calendarsCursor.getLong(0));
 
             if (calendarsCursor.getString(1).equals("#contacts@group.v.calendar.google.com")) {
 
@@ -362,25 +395,43 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
             if (eventsCursor.getLong(0) == calId) {
 
+                eventsInfo.put(eventsCursor.getLong(1),
+                        new ArrayList<Object>(
+                                Arrays.asList(
+                                        eventsCursor.getLong(1),
+                                        eventsCursor.getString(2),
+                                        eventsCursor.getString(3),
+                                        eventsCursor.getLong(4)
+                                )
+                        ));
+
                 contacts.add(eventsCursor.getString(2));
-                events.add(eventsCursor.getString(1) + eventsCursor.getString(2));
+                events.add(eventsCursor.getString(1) + " " + eventsCursor.getString(2));
                 dates.add(eventsCursor.getLong(4));
             }
         }
-
-        Log.d("#### dates", "" + dates);
-        Log.d("#### contacts", "" + contacts);
 
         eventsCursor.close();
         calendarsCursor.close();
 
     }
 
+    public static PendingIntent createEventPIntent(Context context, String title,
+                                                   String description, Calendar date) {
+
+        Intent intent = new Intent(context, MyReceiver.class);
+        intent.putExtra("Title", title);
+        intent.putExtra("Message", description);
+        intent.putExtra("Date", date.getTimeInMillis());
+
+        return PendingIntent.getBroadcast(context, 0, intent, 0);
+    }
+
     public void onClick(View v) {
 
         readEvents();
 
-        startActivity(new Intent(this, ListOfEvents.class));
+        startActivityForResult(new Intent(this, ListOfEvents.class), 1);
     }
 
     protected void onDestroy() {

@@ -1,6 +1,7 @@
 package com.example.gotwin.calendar;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -9,19 +10,22 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
+import java.util.Map;
 
 
 public class ListOfEvents extends ListActivity {
 
     private TextView eventInfo;
 
-    private static String[] eventsArr;
-    private static HashSet<String> contactOfEvent;
     private static String[] menuItems = {
-            "Manage Menu Item 1", "Manage Menu Item 2",
-            "Manage Menu Item 3", "Manage Menu Item 4",
+            "Create notification", "Remove notification",
             "BACK"};
 
     private ArrayAdapter<String> eventAdapter;
@@ -32,8 +36,8 @@ public class ListOfEvents extends ListActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.list_item);
 
-        eventsArr = new String[MainActivity.events.size()];
-        contactOfEvent = new HashSet<>();
+        String[] eventsArr = new String[MainActivity.events.size()];
+        HashSet<String> contactOfEvent = new HashSet<>();
 
         for (int i = 0; i < MainActivity.events.size(); i++) {
 
@@ -65,29 +69,56 @@ public class ListOfEvents extends ListActivity {
             setListAdapter(menuAdapter);
         } else {
             switch ((String)getListView().getItemAtPosition(position)) {
-                case "Manage Menu Item 1":
-                    /// do smth
-                    Toast.makeText(this, "Manage Menu Item 1", Toast.LENGTH_SHORT).show();
+                case "Create notification":
+
+                    addEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
+
                     break;
-                case "Manage Menu Item 2":
-                    Toast.makeText(this, "Manage Menu Item 2", Toast.LENGTH_SHORT).show();
-                    /// do smth
+
+                case "Remove notification":
+
+                    dellEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
+
                     break;
-                case "Manage Menu Item 3":
-                    Toast.makeText(this, "Manage Menu Item 3", Toast.LENGTH_SHORT).show();
-                    /// do smth
-                    break;
-                case "Manage Menu Item 4":
-                    Toast.makeText(this, "Manage Menu Item 4", Toast.LENGTH_SHORT).show();
-                    /// do smth
-                    break;
+
                 case "BACK":
                     setListAdapter(eventAdapter);
                     eventInfo.setText("");
                     break;
+
                 default:
                     break;
             }
         }
+    }
+
+    private void addEvent(long id) {
+
+        onEventClick(id);
+
+        setResult(RESULT_OK, new Intent().putExtra("result", "Event created"));
+        finish();
+    }
+
+    private void dellEvent(long id) {
+
+        onEventClick(id);
+
+        setResult(RESULT_OK, new Intent().putExtra("result", "Event removed"));
+
+        finish();
+    }
+
+    private void onEventClick (long id) {
+
+        Calendar date = new GregorianCalendar();
+        date.setTimeInMillis((Long)(MainActivity.eventsInfo.get(id)).get(3));
+
+        MainActivity.eventTitle = (String)(MainActivity.eventsInfo.get(id)).get(1);
+        MainActivity.eventDescription = (String)(MainActivity.eventsInfo.get(id)).get(2);
+
+        MainActivity.eventDate.set(date.get(Calendar.YEAR),
+                date.get(Calendar.MONTH),
+                date.get(Calendar.DAY_OF_MONTH));
     }
 }
