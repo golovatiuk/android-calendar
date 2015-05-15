@@ -1,0 +1,56 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="horizontal"
+    style="@style/Base.Theme.AppCompat">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:layout_weight="1">
+
+        <CalendarView
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:id="@+id/calendarView"
+            android:showWeekNumber="true"
+            android:background="@color/background_floating_material_light">
+
+        </CalendarView>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:background="#fff5f5f5"
+        android:gravity="center_vertical">
+
+        <view
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            class="com.facebook.login.widget.LoginButton"
+            android:id="@+id/loginButton"
+            android:layout_gravity="center_vertical"
+            style="@style/com_facebook_loginview_default_style"
+            android:layout_margin="5dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Get events"
+            android:id="@+id/getEventsBttn"
+            android:onClick="onClick"
+            android:layout_gravity="center_vertical"
+            style="@style/com_facebook_button"
+            android:layout_margin="5dp"
+            android:gravity="center_vertical" />
+
+    </LinearLayout>
+
+</LinearLayout>

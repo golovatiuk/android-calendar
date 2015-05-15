@@ -18,6 +18,7 @@ import android.widget.CalendarView;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -171,7 +172,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     public void callNotDialog() {
 
-        LinearLayout view = (LinearLayout)
+        RelativeLayout view = (RelativeLayout)
                 getLayoutInflater().inflate(R.layout.dialog_activity, null);
 
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(this);
@@ -185,7 +186,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         timePicker.setIs24HourView(true);
 
-        alertDialog.setTitle("Event");
+//        alertDialog.setTitle("Event");
         alertDialog.setCancelable(false);
         alertDialog.setView(view);
         alertDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {

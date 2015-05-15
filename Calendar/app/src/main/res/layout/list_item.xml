@@ -3,19 +3,32 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/background_material_dark">
+    android:background="@color/background_material_dark"
+    style="@style/Base.TextAppearance.AppCompat.Body1">
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:id="@+id/eventInfo"
         android:textColor="@color/abc_primary_text_material_dark"
-        android:textSize="22dp"/>
+        android:textSize="22dp"
+        android:layout_marginLeft="6dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginRight="6dp"
+        android:layout_marginBottom="15dp" />
 
     <ListView
         android:id="@android:id/list"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:stackFromBottom="false">
+        android:stackFromBottom="false"
+        android:divider="@color/material_blue_grey_800"
+        android:dividerHeight="6dp"
+        android:drawSelectorOnTop="false"
+        android:fastScrollEnabled="false"
+        android:fastScrollAlwaysVisible="false"
+        android:focusable="false"
+        android:footerDividersEnabled="false"
+        android:headerDividersEnabled="false">
 
     </ListView>
 

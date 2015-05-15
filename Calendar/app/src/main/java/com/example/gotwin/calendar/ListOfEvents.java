@@ -42,7 +42,7 @@ public class ListOfEvents extends ListActivity {
         for (int i = 0; i < MainActivity.events.size(); i++) {
 
             eventsArr[i] = MainActivity.events.get(i) +
-                    "\n" + new Date(MainActivity.dates.get(i));
+                    ". \n" + new Date(MainActivity.dates.get(i));
             contactOfEvent.add(MainActivity.contacts.get(i));
         }
 
@@ -71,13 +71,13 @@ public class ListOfEvents extends ListActivity {
             switch ((String)getListView().getItemAtPosition(position)) {
                 case "Create notification":
 
-                    addEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
+                    addEvent(Long.parseLong(eventInfo.getText().toString().split(". ")[0]));
 
                     break;
 
                 case "Remove notification":
 
-                    dellEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
+                    dellEvent(Long.parseLong(eventInfo.getText().toString().split(". ")[0]));
 
                     break;
 
