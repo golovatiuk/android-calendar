@@ -71,13 +71,13 @@ public class ListOfEvents extends ListActivity {
             switch ((String)getListView().getItemAtPosition(position)) {
                 case "Create notification":
 
-                    addEvent(Long.parseLong(eventInfo.getText().toString().split(". ")[0]));
+                    addEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
 
                     break;
 
                 case "Remove notification":
 
-                    dellEvent(Long.parseLong(eventInfo.getText().toString().split(". ")[0]));
+                    dellEvent(Long.parseLong(eventInfo.getText().toString().split(" ")[0]));
 
                     break;
 
