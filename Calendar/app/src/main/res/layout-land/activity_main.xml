@@ -29,27 +29,27 @@
         android:layout_width="wrap_content"
         android:layout_height="fill_parent"
         android:background="#fff5f5f5"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:weightSum="1">
 
         <view
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             class="com.facebook.login.widget.LoginButton"
             android:id="@+id/loginButton"
-            android:layout_gravity="center_vertical"
             style="@style/com_facebook_loginview_default_style"
-            android:layout_margin="5dp" />
+            android:layout_margin="5dp"
+            android:gravity="center" />
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Get events"
             android:id="@+id/getEventsBttn"
             android:onClick="onClick"
-            android:layout_gravity="center_vertical"
             style="@style/com_facebook_button"
             android:layout_margin="5dp"
-            android:gravity="center_vertical" />
+            android:gravity="center" />
 
     </LinearLayout>
 

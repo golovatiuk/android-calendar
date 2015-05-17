@@ -8,15 +8,15 @@
     android:orientation="vertical">
 
     <LinearLayout
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
         android:background="#fff5f5f5"
-        android:gravity="center_horizontal">
+        android:gravity="center_vertical">
 
         <view
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             class="com.facebook.login.widget.LoginButton"
             android:id="@+id/loginButton"
@@ -26,7 +26,7 @@
             android:text="FB Log in" />
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Get events"
             android:id="@+id/getEventsBttn"
